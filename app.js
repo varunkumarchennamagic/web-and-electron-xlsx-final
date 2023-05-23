@@ -19,13 +19,25 @@ function convertToJSON() {
     // Convert the first sheet to JSON
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    var newJson = jsonData[0];
+    var currKey = "";
+    jsonData.forEach((row) => {
+      if (!row.definition) {
+        currKey = row["key term"];
+      } else {
+        if (!newJson[currKey]) {
+          newJson[currKey] = [];
+        }
+        newJson[currKey].push(row);
+      }
+    });
 
     // Enable the download button
     downloadBtn.disabled = false;
 
     // Handle the download button click
     downloadBtn.addEventListener('click', function () {
-      const jsonContent = JSON.stringify(jsonData, null, 2);
+      const jsonContent = JSON.stringify(newJson, null, 2);
       const blob = new Blob([jsonContent], { type: 'application/json' });
       saveAs(blob, 'data.json');
     });
