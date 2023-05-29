@@ -23,14 +23,15 @@ function convertToJSON() {
     // Define the list of allowed exceptions
     const allowedExceptions = ['-', '_', ' ', '.'];
 
-    // Check for special characters and cell length
+    // Check for special characters, cell length, and math formulas
     const invalidChars = new RegExp(`[^\\w${allowedExceptions.join('\\\\')}]`, 'g');
+    const mathFormulaRegex = /^=/; // Regex to match math formulas
     let invalidCells = [];
 
     jsonData.forEach((row, rowIndex) => {
       row.forEach((cell, columnIndex) => {
         if (typeof cell === 'string') {
-          if (invalidChars.test(cell) || cell.length > 128) {
+          if (invalidChars.test(cell) || cell.length > 128 || mathFormulaRegex.test(cell)) {
             const invalidChar = invalidChars.test(cell) ? cell.match(invalidChars)[0] : null;
             const columnHeader = jsonData[0][columnIndex]; // Get the header from the first row
             invalidCells.push({
@@ -38,6 +39,7 @@ function convertToJSON() {
               column: columnHeader,
               character: invalidChar,
               lengthExceeded: cell.length > 128,
+              hasMathFormula: mathFormulaRegex.test(cell),
             });
           }
         }
@@ -45,7 +47,7 @@ function convertToJSON() {
     });
 
     if (invalidCells.length > 0) {
-      let errorMessage = 'Error: Special characters or cell length exceeded in the following cells:\n';
+      let errorMessage = 'Error: Invalid data found in the following cells:\n';
 
       invalidCells.forEach((cell) => {
         errorMessage += `Row: ${cell.row}, Column: ${cell.column}`;
@@ -56,6 +58,10 @@ function convertToJSON() {
 
         if (cell.lengthExceeded) {
           errorMessage += `, Length Exceeded`;
+        }
+
+        if (cell.hasMathFormula) {
+          errorMessage += `, Math Formula Detected`;
         }
 
         errorMessage += '\n';
