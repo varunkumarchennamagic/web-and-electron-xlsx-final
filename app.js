@@ -3,12 +3,20 @@ const fileInput = document.getElementById('xlsxFile');
 const convertBtn = document.getElementById('convertBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 const sheetList = document.getElementById('sheetList');
+const selectAllBtn = document.getElementById('selectAllBtn');
+const clearSelectionBtn = document.getElementById('clearSelectionBtn');
 
 // Add event listener to the convert button
 convertBtn.addEventListener('click', convertToJSON);
 
 // Handle file selection
 fileInput.addEventListener('change', handleFileSelect);
+
+// Handle select all button
+selectAllBtn.addEventListener('click', selectAllSheets);
+
+// Handle clear selection button
+clearSelectionBtn.addEventListener('click', clearSheetSelection);
 
 function handleFileSelect() {
   // Get the uploaded file
@@ -40,6 +48,20 @@ function handleFileSelect() {
   reader.readAsArrayBuffer(file);
 }
 
+function selectAllSheets() {
+  const checkboxes = document.querySelectorAll('input[name="selectedSheets"]');
+  checkboxes.forEach((checkbox) => {
+    checkbox.checked = true;
+  });
+}
+
+function clearSheetSelection() {
+  const checkboxes = document.querySelectorAll('input[name="selectedSheets"]');
+  checkboxes.forEach((checkbox) => {
+    checkbox.checked = false;
+  });
+}
+
 function convertToJSON() {
   // Get the uploaded file
   const file = fileInput.files[0];
@@ -51,7 +73,9 @@ function convertToJSON() {
     const workbook = XLSX.read(data, { type: 'array' });
 
     // Get the selected sheets
-    const selectedSheets = Array.from(document.querySelectorAll('input[name="selectedSheets"]:checked')).map((checkbox) => checkbox.value);
+    const selectedSheets = Array.from(document.querySelectorAll('input[name="selectedSheets"]:checked')).map(
+      (checkbox) => checkbox.value
+    );
 
     // Define the list of allowed exceptions
     const allowedExceptions = ['-', '_', ' ', '.'];
@@ -72,7 +96,7 @@ function convertToJSON() {
             const invalidCharFlag = invalidChars.test(cell);
             if (invalidCharFlag || cell.length > 128 || mathFormulaRegex.test(cell)) {
               const invalidChar = invalidCharFlag ? cell.match(invalidChars) : null;
-              const columnHeader = sheetData[0][columnIndex]; // Get the header from the first row
+              const columnHeader = sheetData[0][columnIndex]; // Get the header from the
               invalidCells.push({
                 sheet: sheetName,
                 row: rowIndex + 1,
