@@ -2,11 +2,20 @@
 <html>
 <head>
   <title>XLSX to JSON Converter</title>
+  <style>
+    .sheet-item {
+      margin-bottom: 5px;
+    }
+  </style>
 </head>
 <body>
   <input type="file" id="xlsxFile" accept=".xlsx" />
   <button id="convertBtn">Convert to JSON</button>
   <button id="downloadBtn" disabled>Download JSON</button>
+  <button id="selectAllBtn">Select All Sheets</button>
+  <button id="clearSelectionBtn">Clear Selection</button>
+
+  <div id="sheetListContainer"></div>
 
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/file-saver"></script>
