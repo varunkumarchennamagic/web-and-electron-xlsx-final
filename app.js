@@ -2,88 +2,42 @@
 const fileInput = document.getElementById('xlsxFile');
 const convertBtn = document.getElementById('convertBtn');
 const downloadBtn = document.getElementById('downloadBtn');
-const selectAllBtn = document.getElementById('selectAllBtn');
-const clearSelectionBtn = document.getElementById('clearSelectionBtn');
-const sheetListContainer = document.getElementById('sheetListContainer');
-
-let selectedSheets = [];
+const sheetList = document.getElementById('sheetList');
 
 // Add event listener to the convert button
 convertBtn.addEventListener('click', convertToJSON);
 
-// Add event listener to the select all button
-selectAllBtn.addEventListener('click', selectAllSheets);
+// Handle file selection
+fileInput.addEventListener('change', handleFileSelect);
 
-// Add event listener to the clear selection button
-clearSelectionBtn.addEventListener('click', clearSheetSelection);
-
-// Update sheet selection when file input changes
-fileInput.addEventListener('change', updateSheetList);
-
-function updateSheetList() {
+function handleFileSelect() {
+  // Get the uploaded file
   const file = fileInput.files[0];
-  const reader = new FileReader();
 
+  // Read the file data
+  const reader = new FileReader();
   reader.onload = function (e) {
     const data = new Uint8Array(e.target.result);
     const workbook = XLSX.read(data, { type: 'array' });
 
-    // Clear previous sheet list
-    sheetListContainer.innerHTML = '';
-
-    // Add checkboxes for each sheet
-    workbook.SheetNames.forEach(sheetName => {
-      const sheetItem = document.createElement('div');
-      sheetItem.classList.add('sheet-item');
-
+    // Display sheet list
+    const sheetNames = workbook.SheetNames;
+    sheetList.innerHTML = '';
+    sheetNames.forEach((sheetName) => {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
+      checkbox.name = 'selectedSheets';
       checkbox.value = sheetName;
       checkbox.checked = true;
-      checkbox.addEventListener('change', handleSheetSelection);
 
       const label = document.createElement('label');
-      label.innerText = sheetName;
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(sheetName));
 
-      sheetItem.appendChild(checkbox);
-      sheetItem.appendChild(label);
-
-      sheetListContainer.appendChild(sheetItem);
-
-      // Add sheet to selected sheets
-      selectedSheets.push(sheetName);
+      sheetList.appendChild(label);
     });
   };
-
   reader.readAsArrayBuffer(file);
-}
-
-function handleSheetSelection(e) {
-  const sheetName = e.target.value;
-  if (e.target.checked) {
-    selectedSheets.push(sheetName);
-  } else {
-    const index = selectedSheets.indexOf(sheetName);
-    if (index > -1) {
-      selectedSheets.splice(index, 1);
-    }
-  }
-}
-
-function selectAllSheets() {
-  const checkboxes = sheetListContainer.querySelectorAll('input[type="checkbox"]');
-  checkboxes.forEach(checkbox => {
-    checkbox.checked = true;
-    selectedSheets.push(checkbox.value);
-  });
-}
-
-function clearSheetSelection() {
-  const checkboxes = sheetListContainer.querySelectorAll('input[type="checkbox"]');
-  checkboxes.forEach(checkbox => {
-    checkbox.checked = false;
-  });
-  selectedSheets = [];
 }
 
 function convertToJSON() {
@@ -96,19 +50,21 @@ function convertToJSON() {
     const data = new Uint8Array(e.target.result);
     const workbook = XLSX.read(data, { type: 'array' });
 
+    // Get the selected sheets
+    const selectedSheets = Array.from(document.querySelectorAll('input[name="selectedSheets"]:checked')).map((checkbox) => checkbox.value);
+
+    // Define the list of allowed exceptions
+    const allowedExceptions = ['-', '_', ' ', '.'];
+
+    // Check for special characters, cell length, and math formulas
+    const invalidChars = new RegExp(`[^\\w${allowedExceptions.join('\\\\')}]`, 'g');
+    const mathFormulaRegex = /^=/; // Regex to match math formulas
+    let invalidCells = [];
+
     // Convert the selected sheets to JSON
-    let jsonData = [];
-    selectedSheets.forEach(sheetName => {
+    const jsonData = selectedSheets.reduce((result, sheetName) => {
       const worksheet = workbook.Sheets[sheetName];
       const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-      // Define the list of allowed exceptions
-      const allowedExceptions = ['-', '_', ' ', '.'];
-
-      // Check for special characters, cell length, and math formulas
-      const invalidChars = new RegExp(`[^\\w${allowedExceptions.join('\\\\')}]`, 'g');
-      const mathFormulaRegex = /^=/; // Regex to match math formulas
-      let invalidCells = [];
 
       sheetData.forEach((row, rowIndex) => {
         row.forEach((cell, columnIndex) => {
@@ -121,7 +77,7 @@ function convertToJSON() {
                 sheet: sheetName,
                 row: rowIndex + 1,
                 column: columnHeader,
-                character: invalidChar,
+                character: invalidChar ? invalidChar[0] : null,
                 lengthExceeded: cell.length > 128,
                 hasMathFormula: mathFormulaRegex.test(cell),
               });
@@ -130,46 +86,41 @@ function convertToJSON() {
         });
       });
 
-      if (invalidCells.length > 0) {
-        let errorMessage = `Error: Invalid data found in the following cells (Sheet: ${sheetName}):\n`;
+      result[sheetName] = sheetData;
+      return result;
+    }, {});
 
-        invalidCells.forEach((cell) => {
-          errorMessage += `Row: ${cell.row}, Column: ${cell.column}`;
+    if (invalidCells.length > 0) {
+      let errorMessage = 'Error: Invalid data found in the following cells:\n';
 
-          if (cell.character) {
-            errorMessage += `, Character: "${cell.character}"`;
-          }
+      invalidCells.forEach((cell) => {
+        errorMessage += `Sheet: ${cell.sheet}, Row: ${cell.row}, Column: ${cell.column}`;
 
-          if (cell.lengthExceeded) {
-            errorMessage += `, Length Exceeded`;
-          }
+        if (cell.character) {
+          errorMessage += `, Character: "${cell.character}"`;
+        }
 
-          if (cell.hasMathFormula) {
-            errorMessage += `, Math Formula Detected`;
-          }
+        if (cell.lengthExceeded) {
+          errorMessage += `, Length Exceeded`;
+        }
 
-          errorMessage += '\n';
-        });
+        if (cell.hasMathFormula) {
+          errorMessage += `, Math Formula Detected`;
+        }
 
-        // Show user-friendly error message
-        alert('Invalid data found in the uploaded file. Please check the error log for more details.');
+        errorMessage += '\n';
+      });
 
-        // Write detailed error to error log file
-        const errorLog = `logs/error_${new Date().toISOString()}.txt`;
-        const errorContent = `Error Log - ${new Date().toISOString()}\n\n${errorMessage}`;
+      // Show user-friendly error message
+      alert('Invalid data found in the uploaded file. Please check the error log for more details.');
 
-        const blob = new Blob([errorContent], { type: 'text/plain;charset=utf-8' });
-        saveAs(blob, errorLog);
+      // Write detailed error to error log file
+      const errorLog = `logs/error_${new Date().toISOString()}.txt`;
+      const errorContent = `Error Log - ${new Date().toISOString()}\n\n${errorMessage}`;
 
-        return;
-      }
+      const blob = new Blob([errorContent], { type: 'text/plain;charset=utf-8' });
+      saveAs(blob, errorLog);
 
-      // Merge the current sheet data with the existing JSON data
-      jsonData = jsonData.concat(sheetData);
-    });
-
-    if (jsonData.length === 0) {
-      alert('No valid data found in the selected sheets.');
       return;
     }
 
