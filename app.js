@@ -31,8 +31,9 @@ function convertToJSON() {
     jsonData.forEach((row, rowIndex) => {
       row.forEach((cell, columnIndex) => {
         if (typeof cell === 'string') {
-          if (invalidChars.test(cell) || cell.length > 128 || mathFormulaRegex.test(cell)) {
-            const invalidChar = invalidChars.test(cell) ? cell.match(invalidChars)[0] : null;
+          var invalidCharFlag = invalidChars.test(cell)
+          if (invalidCharFlag || cell.length > 128 || mathFormulaRegex.test(cell)) {
+            const invalidChar = invalidCharFlag ? cell.match(invalidChars) : null;
             const columnHeader = jsonData[0][columnIndex]; // Get the header from the first row
             invalidCells.push({
               row: rowIndex + 1,
@@ -45,6 +46,7 @@ function convertToJSON() {
         }
       });
     });
+
 
     if (invalidCells.length > 0) {
       let errorMessage = 'Error: Invalid data found in the following cells:\n';
