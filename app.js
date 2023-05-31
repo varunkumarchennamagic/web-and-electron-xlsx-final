@@ -78,7 +78,7 @@ function convertToJSON() {
     );
 
     // Define the list of allowed exceptions
-    const allowedExceptions = ['-', '_', ' ', '.'];
+    const allowedExceptions = ['-', '_', ' ', '.', '\u00ED', '\u00F3', '\u00E9']; // Include í, ó, and é as exceptions
 
     // Check for special characters, cell length, and math formulas
     const invalidChars = new RegExp(`[^\\w${allowedExceptions.join('\\\\')}]`, 'g');
@@ -93,7 +93,19 @@ function convertToJSON() {
       sheetData.forEach((row, rowIndex) => {
         row.forEach((cell, columnIndex) => {
           if (typeof cell === 'string') {
-            const invalidCharFlag = invalidChars.test(cell);
+            var invalidCharFlag = invalidChars.test(cell);
+            if(invalidCharFlag) {
+              var tempFlag = false
+              console.log(cell.match(invalidChars))
+              var invalidArr = cell.match(invalidChars)
+              invalidArr.forEach(char => {
+                console.log(allowedExceptions.includes(char))
+                if(!allowedExceptions.includes(char)){
+                  tempFlag = true
+                }
+              });
+              invalidCharFlag = tempFlag
+            }
             if (invalidCharFlag || cell.length > 128 || mathFormulaRegex.test(cell)) {
               const invalidChar = invalidCharFlag ? cell.match(invalidChars) : null;
               const columnHeader = sheetData[0][columnIndex]; // Get the header from the
