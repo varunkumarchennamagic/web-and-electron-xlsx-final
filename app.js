@@ -86,7 +86,7 @@ function convertToJSON() {
     let invalidCells = [];
 
     // Convert the selected sheets to JSON
-    const jsonData = selectedSheets.reduce((result, sheetName) => {
+    selectedSheets.forEach((sheetName) => {
       const worksheet = workbook.Sheets[sheetName];
       const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
@@ -122,9 +122,11 @@ function convertToJSON() {
         });
       });
 
-      result[sheetName] = sheetData;
-      return result;
-    }, {});
+      const jsonData = { [sheetName]: sheetData };
+      const jsonContent = JSON.stringify(jsonData, null, 2);
+      const blob = new Blob([jsonContent], { type: 'application/json' });
+      saveAs(blob, `${sheetName}.json`);
+    });
 
     if (invalidCells.length > 0) {
       let errorMessage = 'Error: Invalid data found in the following cells:\n';
@@ -159,16 +161,7 @@ function convertToJSON() {
 
       return;
     }
-
-    // Enable the download button
-    downloadBtn.disabled = false;
-
-    // Handle the download button click
-    downloadBtn.addEventListener('click', function () {
-      const jsonContent = JSON.stringify(jsonData, null, 2);
-      const blob = new Blob([jsonContent], { type: 'application/json' });
-      saveAs(blob, 'data.json');
-    });
   };
+
   reader.readAsArrayBuffer(file);
 }
