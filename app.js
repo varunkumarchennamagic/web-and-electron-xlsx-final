@@ -5,6 +5,8 @@ const downloadBtn = document.getElementById('downloadBtn');
 const sheetList = document.getElementById('sheetList');
 const selectAllBtn = document.getElementById('selectAllBtn');
 const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+const progressBar = document.getElementById('progressBar');
+const progressLog = document.getElementById('progressLog');
 
 // Add event listener to the convert button
 convertBtn.addEventListener('click', convertToJSON);
@@ -78,7 +80,7 @@ function convertToJSON() {
     );
 
     // Define the list of allowed exceptions
-    const allowedExceptions = ['-', '_', ' ', '.', '\u00ED', '\u00F3', '\u00E9']; // Include í, ó, and é as exceptions
+    const allowedExceptions = ['-', '_', ' ', '.', '\í', '\ó', '\é'];
 
     // Check for special characters, cell length, and math formulas
     const invalidChars = new RegExp(`[^\\w${allowedExceptions.join('\\\\')}]`, 'g');
@@ -86,7 +88,7 @@ function convertToJSON() {
     let invalidCells = [];
 
     // Convert the selected sheets to JSON
-    selectedSheets.forEach((sheetName) => {
+    selectedSheets.forEach((sheetName, index) => {
       const worksheet = workbook.Sheets[sheetName];
       const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
@@ -122,10 +124,28 @@ function convertToJSON() {
         });
       });
 
-      const jsonData = { [sheetName]: sheetData };
-      const jsonContent = JSON.stringify(jsonData, null, 2);
+      const jsonContent = JSON.stringify(sheetData, null, 2);
       const blob = new Blob([jsonContent], { type: 'application/json' });
-      saveAs(blob, `${sheetName}.json`);
+      const fileName = `${sheetName}.json`;
+
+      // Create a download link for each sheet
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(blob);
+      downloadLink.download = fileName;
+      downloadLink.textContent = fileName;
+
+      // Append the download link to the sheet list
+      sheetList.appendChild(downloadLink);
+
+      // Append a line break after each download link
+      sheetList.appendChild(document.createElement('br'));
+
+      // Update progress bar
+      const progress = ((index + 1) / selectedSheets.length) * 100;
+      progressBar.style.width = `${progress}%`;
+
+      // Update progress log
+      progressLog.textContent = `Converting sheet ${index + 1} of ${selectedSheets.length}...`;
     });
 
     if (invalidCells.length > 0) {
@@ -161,7 +181,9 @@ function convertToJSON() {
 
       return;
     }
-  };
 
+    // Show the download button
+    downloadBtn.style.display = 'block';
+  };
   reader.readAsArrayBuffer(file);
 }
