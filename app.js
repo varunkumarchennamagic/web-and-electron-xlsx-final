@@ -88,7 +88,7 @@ function convertToJSON() {
     let invalidCells = [];
 
     // Convert the selected sheets to JSON
-    selectedSheets.forEach((sheetName, index) => {
+    const jsonData = selectedSheets.reduce((result, sheetName) => {
       const worksheet = workbook.Sheets[sheetName];
       const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
@@ -96,21 +96,21 @@ function convertToJSON() {
         row.forEach((cell, columnIndex) => {
           if (typeof cell === 'string') {
             var invalidCharFlag = invalidChars.test(cell);
-            if(invalidCharFlag) {
-              var tempFlag = false
-              console.log(cell.match(invalidChars))
-              var invalidArr = cell.match(invalidChars)
-              invalidArr.forEach(char => {
-                console.log(allowedExceptions.includes(char))
-                if(!allowedExceptions.includes(char)){
-                  tempFlag = true
+            if (invalidCharFlag) {
+              var tempFlag = false;
+              console.log(cell.match(invalidChars));
+              var invalidArr = cell.match(invalidChars);
+              invalidArr.forEach((char) => {
+                console.log(allowedExceptions.includes(char));
+                if (!allowedExceptions.includes(char)) {
+                  tempFlag = true;
                 }
               });
-              invalidCharFlag = tempFlag
+              invalidCharFlag = tempFlag;
             }
             if (invalidCharFlag || cell.length > 128 || mathFormulaRegex.test(cell)) {
               const invalidChar = invalidCharFlag ? cell.match(invalidChars) : null;
-              const columnHeader = sheetData[0][columnIndex]; // Get the header from the
+              const columnHeader = sheetData[0][columnIndex];
               invalidCells.push({
                 sheet: sheetName,
                 row: rowIndex + 1,
@@ -140,16 +140,17 @@ function convertToJSON() {
       // Append a line break after each download link
       sheetList.appendChild(document.createElement('br'));
 
-      // Update progress bar
-      const progress = ((index + 1) / selectedSheets.length) * 100;
+      // Update progress bar and log
+      const progress = ((result.length + 1) / selectedSheets.length) * 100;
       progressBar.style.width = `${progress}%`;
+      progressLog.textContent = `Converting sheet ${result.length + 1} of ${selectedSheets.length}...`;
 
-      // Update progress log
-      progressLog.textContent = `Converting sheet ${index + 1} of ${selectedSheets.length}...`;
-    });
+      result[sheetName] = sheetData;
+      return result;
+    }, {});
 
     if (invalidCells.length > 0) {
-      let errorMessage = 'Error: Invalid data found in the following cells:\n';
+      let errorMessage = `Error: Invalid data found in the following cells of file: ${file.name}\n`;
 
       invalidCells.forEach((cell) => {
         errorMessage += `Sheet: ${cell.sheet}, Row: ${cell.row}, Column: ${cell.column}`;
@@ -173,7 +174,7 @@ function convertToJSON() {
       alert('Invalid data found in the uploaded file. Please check the error log for more details.');
 
       // Write detailed error to error log file
-      const errorLog = `logs/error_${new Date().toISOString()}.txt`;
+      const errorLog = `logs/error_${new Date().toISOString()}_${file.name}.txt`;
       const errorContent = `Error Log - ${new Date().toISOString()}\n\n${errorMessage}`;
 
       const blob = new Blob([errorContent], { type: 'text/plain;charset=utf-8' });
@@ -182,8 +183,19 @@ function convertToJSON() {
       return;
     }
 
-    // Show the download button
-    downloadBtn.style.display = 'block';
+    // Enable the download button
+    downloadBtn.disabled = false;
+
+    // Handle the download button click
+    downloadBtn.addEventListener('click', function () {
+      // Write each sheet data to a separate file
+      selectedSheets.forEach((sheetName) => {
+        const sheetJson = jsonData[sheetName];
+        const jsonContent = JSON.stringify(sheetJson, null, 2);
+        const blob = new Blob([jsonContent], { type: 'application/json' });
+        saveAs(blob, `${sheetName}.json`);
+      });
+    });
   };
   reader.readAsArrayBuffer(file);
 }
