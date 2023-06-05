@@ -80,7 +80,7 @@ function convertToJSON() {
     );
 
     // Define the list of allowed exceptions
-    const allowedExceptions = ['-', '_', ' ', '.', '\í', '\ó', '\é'];
+    const allowedExceptions = ['-', '_', ' ', '.', '\u00ED', '\u00F3', '\u00E9']; // Include í, ó, and é as exceptions
 
     // Check for special characters, cell length, and math formulas
     const invalidChars = new RegExp(`[^\\w${allowedExceptions.join('\\\\')}]`, 'g');
