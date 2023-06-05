@@ -5,98 +5,142 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
+      background-color: #f2f2f2;
+      margin: 0;
+      padding: 0;
     }
 
-    h1 {
-      text-align: center;
-    }
-
-    #dropArea {
-      border: 2px dashed #aaa;
-      border-radius: 5px;
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
       padding: 20px;
-      text-align: center;
-      cursor: pointer;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    #convertBtn {
+    h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
       display: block;
-      margin: 20px auto;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    .button-group {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    #convertBtn, #downloadBtn {
       padding: 10px 20px;
-      font-size: 18px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
+      font-size: 16px;
       border-radius: 4px;
+      background-color: #4caf50;
+      color: #fff;
+      border: none;
       cursor: pointer;
+      transition: background-color 0.3s ease;
     }
 
     #downloadBtn {
-      display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
-      font-size: 18px;
-      background-color: #337ab7;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
+      display: none;
     }
 
-    #sheetList {
-      margin-top: 20px;
+    #convertBtn:hover, #downloadBtn:hover {
+      background-color: #45a049;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+    }
+
+    #selectAllBtn, #clearSelectionBtn {
+      padding: 6px 12px;
+      font-size: 14px;
+      border-radius: 4px;
+      background-color: #4caf50;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #clearSelectionBtn {
+      margin-left: 10px;
+      background-color: #f44336;
+    }
+
+    #selectAllBtn:hover, #clearSelectionBtn:hover {
+      background-color: #45a049;
     }
 
     #progressBar {
       width: 100%;
       height: 20px;
-      margin-top: 20px;
+      background-color: #ddd;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 10px;
     }
 
-    #progressLog {
-      margin-top: 10px;
+    #progressBar > span {
+      display: block;
+      height: 100%;
+      background-color: #4caf50;
+      transition: width 0.8s ease;
+    }
+
+    #progressPercentage {
+      text-align: center;
+      margin-top: 5px;
+      font-weight: bold;
     }
 
     #errorLog {
       margin-top: 20px;
+      width: 100%;
+      height: 150px;
+      resize: none;
+      border-radius: 4px;
+      padding: 5px;
       font-family: monospace;
-      white-space: pre-wrap;
-    }
-
-    .sheet-checkbox {
-      margin-bottom: 5px;
     }
   </style>
 </head>
 <body>
-  <h1>XLSX to JSON Converter</h1>
-
-  <div id="dropArea">
-    <p>Drag and drop or click to select an XLSX file</p>
-    <input type="file" id="xlsxFile" accept=".xlsx" />
-  </div>
-
-  <button id="convertBtn">Convert to JSON</button>
-  <button id="downloadBtn" disabled>Download JSON</button>
-
-  <h2>Select Sheets:</h2>
-  <button id="selectAllBtn">Select All</button>
-  <button id="clearSelectionBtn">Clear Selection</button>
-  <div id="sheetList"></div>
-
-  <div id="progressBarContainer">
-    <progress id="progressBar" value="0" max="100"></progress>
-    <p id="progressLog"></p>
-  </div>
-
-  <div id="errorLogContainer">
-    <h2>Error Log</h2>
-    <textarea id="errorLog" rows="10" readonly></textarea>
+  <div class="container">
+    <h2>XLSX to JSON Converter</h2>
+    <div class="input-group">
+      <label for="xlsxFile">Select XLSX file:</label>
+      <input type="file" id="xlsxFile">
+    </div>
+    <div class="button-group">
+      <button id="convertBtn">Convert to JSON</button>
+      <button id="downloadBtn" style="display: none;">Download JSON</button>
+    </div>
+    <div class="sheet-list">
+      <h3>Select Sheets:</h3>
+      <button id="selectAllBtn">Select All</button>
+      <button id="clearSelectionBtn">Clear Selection</button>
+      <div id="sheetList"></div>
+    </div>
+    <div id="progressBar">
+      <span></span>
+      <div id="progressPercentage"></div>
+    </div>
+    <div id="progressLog"></div>
+    <textarea id="errorLog" readonly></textarea>
   </div>
 
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-  <script src="https://unpkg.com/file-saver"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.2/dist/FileSaver.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

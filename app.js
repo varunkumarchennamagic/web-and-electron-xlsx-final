@@ -7,6 +7,7 @@ const selectAllBtn = document.getElementById('selectAllBtn');
 const clearSelectionBtn = document.getElementById('clearSelectionBtn');
 const progressBar = document.getElementById('progressBar');
 const progressLog = document.getElementById('progressLog');
+const errorLog = document.getElementById('errorLog');
 
 // Add event listener to the convert button
 convertBtn.addEventListener('click', convertToJSON);
@@ -88,7 +89,7 @@ function convertToJSON() {
     let invalidCells = [];
 
     // Convert the selected sheets to JSON
-    const jsonData = selectedSheets.reduce((result, sheetName) => {
+    selectedSheets.forEach((sheetName, index) => {
       const worksheet = workbook.Sheets[sheetName];
       const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
@@ -110,7 +111,7 @@ function convertToJSON() {
             }
             if (invalidCharFlag || cell.length > 128 || mathFormulaRegex.test(cell)) {
               const invalidChar = invalidCharFlag ? cell.match(invalidChars) : null;
-              const columnHeader = sheetData[0][columnIndex];
+              const columnHeader = sheetData[0][columnIndex]; // Get the header from the
               invalidCells.push({
                 sheet: sheetName,
                 row: rowIndex + 1,
@@ -140,17 +141,17 @@ function convertToJSON() {
       // Append a line break after each download link
       sheetList.appendChild(document.createElement('br'));
 
-      // Update progress bar and log
-      const progress = ((result.length + 1) / selectedSheets.length) * 100;
+      // Update progress bar
+      const progress = ((index + 1) / selectedSheets.length) * 100;
       progressBar.style.width = `${progress}%`;
-      progressLog.textContent = `Converting sheet ${result.length + 1} of ${selectedSheets.length}...`;
+      progressBar.textContent = `${Math.round(progress)}%`;
 
-      result[sheetName] = sheetData;
-      return result;
-    }, {});
+      // Update progress log
+      progressLog.textContent = `Converting sheet ${index + 1} of ${selectedSheets.length}...`;
+    });
 
     if (invalidCells.length > 0) {
-      let errorMessage = `Error: Invalid data found in the following cells of file: ${file.name}\n`;
+      let errorMessage = 'Error: Invalid data found in the following cells:\n';
 
       invalidCells.forEach((cell) => {
         errorMessage += `Sheet: ${cell.sheet}, Row: ${cell.row}, Column: ${cell.column}`;
@@ -174,28 +175,19 @@ function convertToJSON() {
       alert('Invalid data found in the uploaded file. Please check the error log for more details.');
 
       // Write detailed error to error log file
-      const errorLog = `logs/error_${new Date().toISOString()}_${file.name}.txt`;
       const errorContent = `Error Log - ${new Date().toISOString()}\n\n${errorMessage}`;
-
       const blob = new Blob([errorContent], { type: 'text/plain;charset=utf-8' });
-      saveAs(blob, errorLog);
+      const fileName = `error_${new Date().toISOString()}.txt`;
+      saveAs(blob, fileName);
+
+      // Update error log textarea
+      errorLog.textContent = errorMessage;
 
       return;
     }
 
-    // Enable the download button
-    downloadBtn.disabled = false;
-
-    // Handle the download button click
-    downloadBtn.addEventListener('click', function () {
-      // Write each sheet data to a separate file
-      selectedSheets.forEach((sheetName) => {
-        const sheetJson = jsonData[sheetName];
-        const jsonContent = JSON.stringify(sheetJson, null, 2);
-        const blob = new Blob([jsonContent], { type: 'application/json' });
-        saveAs(blob, `${sheetName}.json`);
-      });
-    });
+    // Show the download button
+    downloadBtn.style.display = 'block';
   };
   reader.readAsArrayBuffer(file);
 }
