@@ -7,7 +7,7 @@ const selectAllBtn = document.getElementById('selectAllBtn');
 const clearSelectionBtn = document.getElementById('clearSelectionBtn');
 const progressBar = document.getElementById('progressBar');
 const progressLog = document.getElementById('progressLog');
-const errorLog = document.getElementById('errorLog');
+const progressPercentage = document.getElementById('progressPercentage');
 
 // Add event listener to the convert button
 convertBtn.addEventListener('click', convertToJSON);
@@ -143,8 +143,10 @@ function convertToJSON() {
 
       // Update progress bar
       const progress = ((index + 1) / selectedSheets.length) * 100;
-      progressBar.style.width = `${progress}%`;
-      progressBar.textContent = `${Math.round(progress)}%`;
+      progressBar.querySelector('span').style.width = `${progress}%`;
+
+      // Update progress percentage
+      progressPercentage.textContent = `${Math.round(progress)}%`;
 
       // Update progress log
       progressLog.textContent = `Converting sheet ${index + 1} of ${selectedSheets.length}...`;
@@ -175,13 +177,11 @@ function convertToJSON() {
       alert('Invalid data found in the uploaded file. Please check the error log for more details.');
 
       // Write detailed error to error log file
+      const errorLog = `logs/error_${new Date().toISOString()}.txt`;
       const errorContent = `Error Log - ${new Date().toISOString()}\n\n${errorMessage}`;
-      const blob = new Blob([errorContent], { type: 'text/plain;charset=utf-8' });
-      const fileName = `error_${new Date().toISOString()}.txt`;
-      saveAs(blob, fileName);
 
-      // Update error log textarea
-      errorLog.textContent = errorMessage;
+      const blob = new Blob([errorContent], { type: 'text/plain;charset=utf-8' });
+      saveAs(blob, errorLog);
 
       return;
     }
