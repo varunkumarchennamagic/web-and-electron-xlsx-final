@@ -8,6 +8,7 @@ const clearSelectionBtn = document.getElementById('clearSelectionBtn');
 const progressBar = document.getElementById('progressBar');
 const progressLog = document.getElementById('progressLog');
 const progressPercentage = document.getElementById('progressPercentage');
+let xlsxFileName = '';
 
 // Add event listener to the convert button
 convertBtn.addEventListener('click', convertToJSON);
@@ -24,7 +25,7 @@ clearSelectionBtn.addEventListener('click', clearSheetSelection);
 function handleFileSelect() {
   // Get the uploaded file
   const file = fileInput.files[0];
-
+  xlsxFileName = file.name;
   // Read the file data
   const reader = new FileReader();
   reader.onload = function (e) {
@@ -174,7 +175,7 @@ function convertToJSON() {
 
       // Write detailed error to error log file
       const errorLog = `logs/error_${new Date().toISOString()}.txt`;
-      const errorContent = `Error Log - ${new Date().toISOString()}\n\n${errorMessage}`;
+      const errorContent = `Error Log - ${new Date().toISOString()}\n\nXLSX File: ${xlsxFileName}\n\n${errorMessage}`;
 
       const blob = new Blob([errorContent], { type: 'text/plain;charset=utf-8' });
       saveAs(blob, errorLog);
