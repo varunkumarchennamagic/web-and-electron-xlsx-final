@@ -135,11 +135,11 @@ function convertToJSON() {
       downloadLink.download = fileName;
       downloadLink.textContent = fileName;
 
-      // Append the download link to the sheet list
-      sheetList.appendChild(downloadLink);
-
       // Append a line break after each download link
       sheetList.appendChild(document.createElement('br'));
+
+      // Append the download link to the sheet list
+      sheetList.appendChild(downloadLink);
 
       // Update progress bar
       const progress = ((index + 1) / selectedSheets.length) * 100;
@@ -157,19 +157,15 @@ function convertToJSON() {
 
       invalidCells.forEach((cell) => {
         errorMessage += `Sheet: ${cell.sheet}, Row: ${cell.row}, Column: ${cell.column}`;
-
         if (cell.character) {
-          errorMessage += `, Character: "${cell.character}"`;
+          errorMessage += `, Invalid Character: ${cell.character}`;
         }
-
         if (cell.lengthExceeded) {
-          errorMessage += `, Length Exceeded`;
+          errorMessage += ', Length Exceeded';
         }
-
         if (cell.hasMathFormula) {
-          errorMessage += `, Math Formula Detected`;
+          errorMessage += ', Contains Math Formula';
         }
-
         errorMessage += '\n';
       });
 
@@ -185,9 +181,6 @@ function convertToJSON() {
 
       return;
     }
-
-    // Show the download button
-    downloadBtn.style.display = 'block';
   };
   reader.readAsArrayBuffer(file);
 }
