@@ -48,6 +48,7 @@ function handleFileSelect() {
       label.appendChild(document.createTextNode(sheetName));
 
       sheetList.appendChild(label);
+      sheetList.appendChild(document.createElement('br'));
     });
   };
   reader.readAsArrayBuffer(file);

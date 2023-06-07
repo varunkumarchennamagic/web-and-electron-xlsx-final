@@ -9,23 +9,27 @@
 <body>
   <div class="container">
     <h1>XLSX to JSON Converter</h1>
-    <input type="file" id="xlsxFile" accept=".xlsx" />
-    <br /><br />
-    <button id="convertBtn">Convert to JSON</button>
-    <button id="downloadBtn" class="hidden">Download All Sheets</button>
-    <br /><br />
-    <div>
-      <label>Select Sheets:</label>
-      <button id="selectAllBtn">Select All</button>
-      <button id="clearSelectionBtn">Clear Selection</button>
+    <div class="left-side">
+      <input type="file" id="xlsxFile" accept=".xlsx" />
+      <br /><br />
+      <button id="convertBtn">Convert to JSON</button>
+      <button id="downloadBtn" class="hidden">Download All Sheets</button>
+      <br /><br />
+      <div>
+        <label>Select Sheets:</label>
+        <button id="selectAllBtn">Select All</button>
+        <button id="clearSelectionBtn">Clear Selection</button>
+      </div>
+      <div id="sheetList"></div>
     </div>
-    <div id="sheetList"></div>
-    <div id="downloadLinks"></div>
-    <div id="progressBar">
-      <span></span>
+    <div class="right-side">
+      <div id="progressBar">
+        <span></span>
+      </div>
+      <div id="progressPercentage"></div>
+      <div id="progressLog"></div>
+      <div id="downloadLinks"></div>
     </div>
-    <div id="progressPercentage"></div>
-    <div id="progressLog"></div>
   </div>
 
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
