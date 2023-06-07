@@ -3,6 +3,7 @@ const fileInput = document.getElementById('xlsxFile');
 const convertBtn = document.getElementById('convertBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 const sheetList = document.getElementById('sheetList');
+const downloadLinks = document.getElementById('downloadLinks');
 const selectAllBtn = document.getElementById('selectAllBtn');
 const clearSelectionBtn = document.getElementById('clearSelectionBtn');
 const progressBar = document.getElementById('progressBar');
@@ -67,6 +68,7 @@ function clearSheetSelection() {
 }
 
 function convertToJSON() {
+  progressBar.querySelector('span').style.width = '0px';
   // Get the uploaded file
   const file = fileInput.files[0];
 
@@ -88,11 +90,26 @@ function convertToJSON() {
     const invalidChars = new RegExp(`[^\\w${allowedExceptions.join('\\\\')}]`, 'g');
     const mathFormulaRegex = /^=/; // Regex to match math formulas
     let invalidCells = [];
+    downloadLinks.innerHTML = '';
 
     // Convert the selected sheets to JSON
     selectedSheets.forEach((sheetName, index) => {
       const worksheet = workbook.Sheets[sheetName];
       const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      var newJson = jsonData[0];
+      var currKey = "";
+      jsonData.forEach((row) => {
+        if (!row.definition) {
+          currKey = row["key term"];
+        } else {
+          if (!newJson[currKey]) {
+            newJson[currKey] = [];
+          }
+          newJson[currKey].push(row);
+        }
+      });
 
       sheetData.forEach((row, rowIndex) => {
         row.forEach((cell, columnIndex) => {
@@ -126,7 +143,7 @@ function convertToJSON() {
         });
       });
 
-      const jsonContent = JSON.stringify(sheetData, null, 2);
+      const jsonContent = JSON.stringify(newJson, null, 2);
       const blob = new Blob([jsonContent], { type: 'application/json' });
       const fileName = `${sheetName}.json`;
 
@@ -137,10 +154,10 @@ function convertToJSON() {
       downloadLink.textContent = fileName;
 
       // Append a line break after each download link
-      sheetList.appendChild(document.createElement('br'));
+      downloadLinks.appendChild(document.createElement('br'));
 
       // Append the download link to the sheet list
-      sheetList.appendChild(downloadLink);
+      downloadLinks.appendChild(downloadLink);
 
       // Update progress bar
       const progress = ((index + 1) / selectedSheets.length) * 100;
