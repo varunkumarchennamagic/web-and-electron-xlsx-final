@@ -13,8 +13,8 @@ body {
     border: 1px solid #ccc;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    display: flex; /* Add flex display */
-    flex-wrap: wrap; /* Wrap the container to a new line if necessary */
+    display: flex;
+    flex-wrap: wrap;
   }
   
   .left-side {
@@ -23,15 +23,15 @@ body {
   
   .right-side {
     width: 50%;
-    display: flex; /* Add flex display to align progress elements vertically */
-    flex-direction: column; /* Align progress elements vertically */
-    align-items: center; /* Center align the progress elements horizontally */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   
   h1 {
     text-align: center;
     margin-top: 0;
-    width: 100%
+    width: 100%;
   }
   
   button {
@@ -44,7 +44,7 @@ body {
     cursor: pointer;
   }
   
-  .hidden {
+  button.hidden {
     display: none;
   }
   
@@ -64,7 +64,7 @@ body {
     background-color: #fff;
     border-radius: 4px;
     overflow: hidden;
-    width: 100%; /* Adjust the width of the progress bar to fit the container */
+    width: 100%;
   }
   
   #progressBar span {
@@ -86,5 +86,79 @@ body {
     text-align: center;
     font-style: italic;
     color: #888;
+  }
+  
+  /* New additions for improved UI */
+  
+  .container::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+  
+  .section {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #ccc;
+  }
+  
+  .left-side,
+  .right-side {
+    box-sizing: border-box;
+    padding: 10px;
+  }
+  
+  .left-side {
+    background-color: #f9f9f9;
+  }
+  
+  .right-side {
+    background-color: #ececec;
+  }
+  
+  .button-container {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .button-container button {
+    width: 45%;
+  }
+  
+  .button-container button:first-child {
+    margin-right: 10px;
+  }
+  
+  .sheet-list-container {
+    margin-top: 20px;
+  }
+  
+  .sheet-list-container label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  .progress-container {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .download-links-container {
+    margin-top: 20px;
+  }
+  
+  .download-links-container a {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  .hr-line {
+    border: none;
+    height: 1px;
+    background-color: #ccc;
+    margin: 10px 0;
   }
   
