@@ -10,6 +10,7 @@ const progressBar = document.getElementById('progressBar');
 const progressLog = document.getElementById('progressLog');
 const progressPercentage = document.getElementById('progressPercentage');
 let xlsxFileName = '';
+let invalidCells = []; // Declare invalidCells as a global variable
 
 // Add event listener to the convert button
 convertBtn.addEventListener('click', convertToJSON);
@@ -44,8 +45,14 @@ function handleFileSelect() {
       checkbox.checked = true;
 
       const label = document.createElement('label');
+      label.htmlFor = sheetName;
       label.appendChild(checkbox);
       label.appendChild(document.createTextNode(sheetName));
+
+      const sheetStatus = document.createElement('span');
+      sheetStatus.className = 'sheet-status';
+
+      label.appendChild(sheetStatus);
 
       sheetList.appendChild(label);
       sheetList.appendChild(document.createElement('br'));
@@ -70,6 +77,8 @@ function clearSheetSelection() {
 
 function convertToJSON() {
   progressBar.querySelector('span').style.width = '0px';
+  progressLog.innerHTML = '';
+  progressPercentage.textContent = '0%';
   // Get the uploaded file
   const file = fileInput.files[0];
 
@@ -88,118 +97,109 @@ function convertToJSON() {
     const allowedExceptions = ['-', '_', ' ', '.', '\u00ED', '\u00F3', '\u00E9']; // Include í, ó, and é as exceptions
 
     // Check for special characters, cell length, and math formulas
-    const invalidChars = new RegExp(`[^\\w${allowedExceptions.join('\\\\')}]`, 'g');
-    const mathFormulaRegex = /^=/; // Regex to match math formulas
-    let invalidCells = [];
-    downloadLinks.innerHTML = '';
+    const invalidChars = new RegExp(`[^a-zA-Z0-9${allowedExceptions.join('\\')}]`, 'g');
+    const mathFormulaRegex = /^=/;
 
-    // Convert the selected sheets to JSON
-    selectedSheets.forEach((sheetName, index) => {
-      const worksheet = workbook.Sheets[sheetName];
-      const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    // Initialize progress tracking variables
+    let currentSheetIndex = 0;
+    let totalSheets = selectedSheets.length;
 
-      var newJson = jsonData[0];
-      var currKey = "";
-      jsonData.forEach((row) => {
-        if (!row.definition) {
-          currKey = row["key term"];
-        } else {
-          if (!newJson[currKey]) {
-            newJson[currKey] = [];
+    // Start conversion process
+    convertSheetToJson(workbook, selectedSheets, currentSheetIndex, totalSheets);
+
+    function convertSheetToJson(workbook, selectedSheets, currentSheetIndex, totalSheets) {
+      const sheetName = selectedSheets[currentSheetIndex];
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+      // Check for invalid cells
+      const cellsWithErrors = [];
+      jsonData.forEach((row, rowIndex) => {
+        for (const [key, value] of Object.entries(row)) {
+          if (typeof value === 'string' && value.match(invalidChars)) {
+            cellsWithErrors.push(`${XLSX.utils.encode_col(key)}${rowIndex + 2}`);
+          } else if (typeof value === 'string' && value.match(mathFormulaRegex)) {
+            cellsWithErrors.push(`${XLSX.utils.encode_col(key)}${rowIndex + 2}`);
           }
-          newJson[currKey].push(row);
         }
       });
 
-      sheetData.forEach((row, rowIndex) => {
-        row.forEach((cell, columnIndex) => {
-          if (typeof cell === 'string') {
-            var invalidCharFlag = invalidChars.test(cell);
-            if (invalidCharFlag) {
-              var tempFlag = false;
-              console.log(cell.match(invalidChars));
-              var invalidArr = cell.match(invalidChars);
-              invalidArr.forEach((char) => {
-                console.log(allowedExceptions.includes(char));
-                if (!allowedExceptions.includes(char)) {
-                  tempFlag = true;
-                }
-              });
-              invalidCharFlag = tempFlag;
-            }
-            if (invalidCharFlag || cell.length > 128 || mathFormulaRegex.test(cell)) {
-              const invalidChar = invalidCharFlag ? cell.match(invalidChars) : null;
-              const columnHeader = sheetData[0][columnIndex]; // Get the header from the
-              invalidCells.push({
-                sheet: sheetName,
-                row: rowIndex + 1,
-                column: columnHeader,
-                character: invalidChar ? invalidChar[0] : null,
-                lengthExceeded: cell.length > 128,
-                hasMathFormula: mathFormulaRegex.test(cell),
-              });
-            }
-          }
-        });
-      });
+      if (cellsWithErrors.length > 0) {
+        invalidCells = invalidCells.concat(cellsWithErrors);
+        const sheetStatus = createSheetStatusElement('Failed');
+        updateSheetStatus(sheetName, sheetStatus);
+      } else {
+        const sheetStatus = createSheetStatusElement('Success');
+        updateSheetStatus(sheetName, sheetStatus);
 
-      const jsonContent = JSON.stringify(newJson, null, 2);
-      const blob = new Blob([jsonContent], { type: 'application/json' });
-      const fileName = `${sheetName}.json`;
+        const jsonDataStr = JSON.stringify(jsonData, null, 2);
+        const blob = new Blob([jsonDataStr], { type: 'application/json' });
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(blob);
+        downloadLink.download = `${xlsxFileName}_${sheetName}.json`;
+        downloadLink.textContent = `${xlsxFileName}_${sheetName}.json`;
+        downloadLink.classList.add('download-link');
+        downloadLinks.appendChild(downloadLink);
+        downloadLinks.appendChild(document.createElement('br'));
+      }
 
-      // Create a download link for each sheet
-      const downloadLink = document.createElement('a');
-      downloadLink.href = URL.createObjectURL(blob);
-      downloadLink.download = fileName;
-      downloadLink.textContent = fileName;
+      // Update progress bar and log
+      const progressPercentageValue = ((currentSheetIndex + 1) / totalSheets) * 100;
+      progressBar.querySelector('span').style.width = `${progressPercentageValue}%`;
+      progressPercentage.textContent = `${Math.round(progressPercentageValue)}%`;
+      progressLog.innerHTML += `Converted sheet: ${sheetName}<br>`;
 
-      // Append a line break after each download link
-      downloadLinks.appendChild(document.createElement('br'));
+      currentSheetIndex++;
 
-      // Append the download link to the sheet list
-      downloadLinks.appendChild(downloadLink);
-
-      // Update progress bar
-      const progress = ((index + 1) / selectedSheets.length) * 100;
-      progressBar.querySelector('span').style.width = `${progress}%`;
-
-      // Update progress percentage
-      progressPercentage.textContent = `${Math.round(progress)}%`;
-
-      // Update progress log
-      progressLog.textContent = `Converting sheet ${index + 1} of ${selectedSheets.length}...`;
-    });
-
-    if (invalidCells.length > 0) {
-      let errorMessage = 'Error: Invalid data found in the following cells:\n';
-
-      invalidCells.forEach((cell) => {
-        errorMessage += `Sheet: ${cell.sheet}, Row: ${cell.row}, Column: ${cell.column}`;
-        if (cell.character) {
-          errorMessage += `, Invalid Character: ${cell.character}`;
+      if (currentSheetIndex < totalSheets) {
+        setTimeout(() => {
+          convertSheetToJson(workbook, selectedSheets, currentSheetIndex, totalSheets);
+        }, 100);
+      } else {
+        // Conversion completed
+        if (invalidCells.length > 0) {
+          const errorLogBtn = document.createElement('button');
+          errorLogBtn.textContent = 'Download Error Log';
+          errorLogBtn.addEventListener('click', downloadErrorLog);
+          downloadLinks.appendChild(errorLogBtn);
         }
-        if (cell.lengthExceeded) {
-          errorMessage += ', Length Exceeded';
-        }
-        if (cell.hasMathFormula) {
-          errorMessage += ', Contains Math Formula';
-        }
-        errorMessage += '\n';
-      });
-
-      // Show user-friendly error message
-      alert('Invalid data found in the uploaded file. Please check the error log for more details.');
-
-      // Write detailed error to error log file
-      const errorLog = `logs/error_${new Date().toISOString()}.txt`;
-      const errorContent = `Error Log - ${new Date().toISOString()}\n\nXLSX File: ${xlsxFileName}\n\n${errorMessage}`;
-
-      const blob = new Blob([errorContent], { type: 'text/plain;charset=utf-8' });
-      saveAs(blob, errorLog);
-
-      return;
+      }
     }
   };
   reader.readAsArrayBuffer(file);
+}
+
+function createSheetStatusElement(status) {
+  const sheetStatus = document.createElement('span');
+  sheetStatus.className = 'sheet-status';
+
+  if (status === 'Failed') {
+    sheetStatus.textContent = 'Failed';
+    sheetStatus.classList.add('failed');
+  } else if (status === 'Success') {
+    sheetStatus.textContent = 'Success';
+    sheetStatus.classList.add('success');
+  }
+
+  return sheetStatus;
+}
+
+function updateSheetStatus(sheetName, sheetStatusElement) {
+  const label = sheetList.querySelector(`label[for="${sheetName}"]`);
+  const existingSheetStatus = label.querySelector('.sheet-status');
+  if (existingSheetStatus) {
+    label.removeChild(existingSheetStatus);
+  }
+  label.appendChild(sheetStatusElement);
+}
+
+function downloadErrorLog() {
+  const errorLogContent = invalidCells.join('\n');
+  const blob = new Blob([errorLogContent], { type: 'text/plain' });
+  const downloadLink = document.createElement('a');
+  downloadLink.href = URL.createObjectURL(blob);
+  downloadLink.download = 'error_log.txt';
+  downloadLink.textContent = 'error_log.txt';
+  downloadLink.classList.add('download-link');
+  downloadLinks.appendChild(downloadLink);
 }

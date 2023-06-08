@@ -162,3 +162,15 @@ body {
     margin: 10px 0;
   }
   
+  .sheet-status {
+    margin-left: 10px;
+  }
+  
+  .sheet-status.success {
+    color: green;
+  }
+  
+  .sheet-status.failed {
+    color: red;
+  }
+  
